@@ -13,3 +13,5 @@ Jupyter notebooks and other scripts are in /src
 7. model_analysis.ipynb - contains code for analyzing model performances and predictions for the validation set.
 ## Outputs
 When jupyter notebooks are run, they will save files to /outputs.
+## Acknowledgments
+This research was made possible by the generous support of the Program for Research In Science and Engineering and the mentorship of Jackie Valeri. I acknowledge the original [Chemprop](https://github.com/chemprop/chemprop) repository as well as the [Evidential Chemprop](https://github.com/aamini/chemprop#readme) repository my project used for deep classification models.
