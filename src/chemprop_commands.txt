@@ -1,0 +1,45 @@
+### This file contains the commands for the chemprop model workflow ###
+### Before running these commands, the user must run generate_chemprop_data.ipynb ###
+
+### standard chemprop model (run with vanilla chemprop package) ###
+# hyperparameter optimimization
+chemprop_hyperopt --data_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/nonholdout.csv --dataset_type classification --num_iters 15 --config_save_path ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold/hyperoptimization
+# retraining on hp optimized model
+chemprop_train --data_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/train.csv --dataset_type classification --save_dir ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold --num_folds 1 --ensemble_size 5 --separate_val_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/val.csv --separate_test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/test.csv --target_columns CoA_synthesis PMF cell_division cell_wall membrane nucleic_acid oxidative_stress protein_biosynthesis --config_path ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold/hyperoptimization
+# predicting with hyperparam optimized chemprop
+chemprop_predict --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/holdout.csv --checkpoint_dir ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold --preds_path ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold/holdout_preds.csv
+chemprop_predict --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/external_val.csv --checkpoint_dir ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold --preds_path ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold/external_val_preds.csv
+chemprop_predict --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/brochado_val.csv --checkpoint_dir ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold --preds_path ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold/brochado_val_preds.csv
+# getting embeddings from model trained on abx_moa dataset
+chemprop_fingerprint --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/all.csv --checkpoint_dir ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold --preds_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/fingerprints.csv
+
+### Evidential uncertainty chemprop (run with https://github.com/aamini/chemprop fork of chemprop repo) ###
+python hyperparameter_optimization.py --confidence evidence --new_loss --save_confidence conf.txt --confidence_evaluation_methods cutoff --data_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/nonholdout.csv --dataset_type classification --num_iters 15 --config_save_path ../abx_moa/outputs/evidential_chemprop_nonhuman_multilabel_classification_1_fold/hyperoptimization
+# training hp optimized chemprop with uncertainty 
+python train.py --confidence evidence --epochs 20 --new_loss --regularizer_coeff 0.2 --save_confidence conf.txt --confidence_evaluation_methods cutoff --data_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/train.csv --dataset_type classification --save_dir ../abx_moa/outputs/evidential_chemprop_nonhuman_multilabel_classification_1_fold --num_folds 1 --ensemble_size 5 --separate_val_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/val.csv --separate_test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/test.csv --config_path ../abx_moa/outputs/chemprop_nonhuman_multilabel_classification_1_fold/hyperoptimization
+# training no hp optimized chemprop with uncertainty
+python train.py --confidence evidence --epochs 20 --new_loss --regularizer_coeff 0.2 --save_confidence conf.txt --confidence_evaluation_methods cutoff --data_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/train.csv --dataset_type classification --save_dir ../abx_moa/outputs/evidential_chemprop_unoptimized --num_folds 1 --ensemble_size 5 --separate_val_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/val.csv --separate_test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/test.csv
+# predicting with hp optimized uncertainty chemprop
+python predict.py --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/holdout_smiles_only.csv --checkpoint_dir ../abx_moa/outputs/evidential_chemprop_nonhuman_multilabel_classification_1_fold --preds_path ../abx_moa/outputs/evidential_chemprop_nonhuman_multilabel_classification_1_fold/holdout_preds.csv
+python predict.py --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/external_val_smiles_only.csv --checkpoint_dir ../abx_moa/outputs/evidential_chemprop_nonhuman_multilabel_classification_1_fold --preds_path ../abx_moa/outputs/evidential_chemprop_nonhuman_multilabel_classification_1_fold/external_val_preds.csv
+# predicting with no hp optimized uncertainty chemprop
+python predict.py --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/holdout_smiles_only.csv --checkpoint_dir ../abx_moa/outputs/evidential_chemprop_unoptimized --preds_path ../abx_moa/outputs/evidential_chemprop_unoptimized/holdout_preds.csv
+python predict.py --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/external_val_smiles_only.csv --checkpoint_dir ../abx_moa/outputs/evidential_chemprop_unoptimized --preds_path ../abx_moa/outputs/evidential_chemprop_unoptimized/external_val_preds.csv
+# hp optimized evidential chemprop
+python train.py --confidence evidence --epochs 20 --new_loss --regularizer_coeff 0.2 --save_confidence conf.txt --confidence_evaluation_methods cutoff --data_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/train.csv --dataset_type classification --save_dir ../abx_moa/outputs/evidential_chemprop_optimized --num_folds 1 --separate_val_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/val.csv --separate_test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/test.csv --config_path ../abx_moa/outputs/evidential_chemprop_nonhuman_multilabel_classification_1_fold/hyperoptimization
+python predict.py --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/holdout_smiles_only.csv --checkpoint_dir ../abx_moa/outputs/evidential_chemprop_optimized --preds_path ../abx_moa/outputs/evidential_chemprop_optimized/holdout_preds.csv
+python predict.py --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/external_val_smiles_only.csv --checkpoint_dir ../abx_moa/outputs/evidential_chemprop_optimized --preds_path ../abx_moa/outputs/evidential_chemprop_optimized/external_val_preds.csv
+
+### FFN on ECFP4 (Morgan fingerprints; run in vanilla chemprop environment) ###
+chemprop_hyperopt --data_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/nonholdout.csv --dataset_type classification --num_iters 10 --config_save_path ../abx_moa/outputs/FFN_ECFP4/hyperoptimization --features_only --features_generator morgan
+chemprop_train --data_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/train.csv --dataset_type classification --save_dir ../abx_moa/outputs/FFN_ECFP4 --num_folds 1 --separate_val_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/val.csv --separate_test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/test.csv --config_path ../abx_moa/outputs/FFN_ECFP4/hyperoptimization --features_only --features_generator morgan
+chemprop_predict --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/holdout_smiles_only.csv --checkpoint_dir ../abx_moa/outputs/FFN_ECFP --preds_path ../abx_moa/outputs/FFN_ECFP4/holdout_preds.csv --features_generator morgan
+chemprop_predict --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/external_val_smiles_only.csv --checkpoint_dir ../abx_moa/outputs/FFN_ECFP --preds_path ../abx_moa/outputs/FFN_ECFP4/external_val_preds.csv --features_generator morgan
+
+### Training chemprop on Broad dataset from Stokes et al. 2020 for embeddings (run in vanilla chemprop environment) ###
+chemprop_train --data_path ../abx_moa/data/broad_dataset.csv --dataset_type classification --save_dir ../abx_moa/outputs/chemprop_broad_classification_1_fold --num_folds 1 --split_sizes 0.8 0.1 0.1
+# getting embeddings from model trained on Broad growth inhibition dataset
+python scripts/save_features.py --data_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/all.csv --save_path ../abx_moa/data/broad_encoded_smiles_features.npz --features_generator rdkit_2d_normalized
+chemprop_fingerprint --test_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/all.csv --checkpoint_dir ../abx_moa/outputs/0405_broad_inhibition_20folds/fold_0 --features_path ../abx_moa/data/broad_encoded_smiles_features.npz --preds_path ../abx_moa/data/chemprop_nonhuman_multilabel_inputs/broad_encoded_fingerprints_fold_0.csv --no_features_scaling
+
+# FFN on E3FP
